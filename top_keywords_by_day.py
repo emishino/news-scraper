@@ -1,4 +1,10 @@
 # top_keywords_by_day.py
+# --- これをファイルの一番上に追加 ---
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+# ------------------------------------
+import unicodedata
 import pandas as pd
 import glob, os, re
 from collections import Counter
@@ -6,7 +12,7 @@ import matplotlib as mpl
 mpl.rcParams["font.family"] = ["Yu Gothic", "Meiryo", "MS Gothic"]  # 使える日本語フォントを順番に
 mpl.rcParams["axes.unicode_minus"] = False  # －（マイナス）も文字化けしないように
 
-import matplotlib.pyplot as plt
+
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
@@ -28,6 +34,7 @@ for f in files:
 
 data = pd.concat(frames, ignore_index=True)
 data.columns = [c.strip().lower() for c in data.columns]
+data["date"] = pd.to_datetime(data["date"], errors="coerce").dt.strftime("%Y-%m-%d")
 titles = data[["date", "title"]].dropna()
 
 # ---- トークナイズ（Janomeがあれば精度UP） ----
@@ -40,30 +47,48 @@ def tokenize_with_janome(text):
     terms = []
     for token in t.tokenize(text):
         base = token.base_form if token.base_form != "*" else token.surface
-        pos = token.part_of_speech.split(",")[0]
-        if pos == "名詞" and len(base) >= 2:
-            terms.append(base)
+        base = unicodedata.normalize("NFKC", base)  # 全角→半角など正規化
+        pos = token.part_of_speech.split(",")
+        # 名詞以外、または数字系の名詞は除外
+        if pos[0] != "名詞":
+            continue
+        if "数" in pos:          # 名詞-数 を除外
+            continue
+        if base.isdigit():       # 半角数字のみ
+            continue
+        if re.fullmatch(r"[0-9]+", base):
+            continue
+        if len(base) < 2:
+            continue
+        terms.append(base)
     return terms
 
+
 def tokenize_simple(text):
-    text = re.sub(r"https?://\S+", " ", str(text))
+    # 正規化（全角→半角、結合文字の統一）
+    text = unicodedata.normalize("NFKC", str(text))
+    # URL除去
+    text = re.sub(r"https?://\S+", " ", text)
+    # 2文字以上の日本語/英数を拾う
     pattern = re.compile(r"[ぁ-んァ-ン一-龥A-Za-z0-9]{2,}")
     stop = set("""
         これ それ あれ ため など そして また
         する なる できる 行う いる ある もの こと よう
         さん 月 日 年 今日 明日 昨日
-        ニュース 速報 写真 画像 動画 PR Yahoo https www com jp article
+        ニュース NEWS 速報 写真 画像 動画 PR Yahoo https www com jp article
     """.split())
     terms = []
     for w in pattern.findall(text):
-        if re.fullmatch(r"[A-Za-z0-9]+", w):
+        # 完全に英数字だけの短い語（ノイズ）や数字だけは除外
+        if w.isdigit():
             continue
-        if re.fullmatch(r"\d{1,4}", w):
+        if re.fullmatch(r"[0-9]+", w):
             continue
         if w in stop:
             continue
         terms.append(w)
     return terms
+
 
 def tokenize(text):
     t = tokenize_with_janome(text)
@@ -93,14 +118,27 @@ global_top = (
     .head(M).index.tolist()
 )
 pivot = (
-    top_df[top_df["keyword"].isin(global_top)]
-    .pivot_table(index="keyword", columns="date", values="count", aggfunc="sum", fill_value=0)
-    .sort_values(by=list(top_df["date"].unique())[-1:], ascending=False)
+    top_df.assign(
+        date=pd.to_datetime(top_df["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+    )
+    .pivot_table(index="keyword", columns="date", values="count",
+                 aggfunc="sum", fill_value=0)
 )
+
+# 列（横軸）を日付の昇順で並べる
+cols_sorted = sorted(pivot.columns, key=lambda x: pd.to_datetime(x))
+pivot = pivot[cols_sorted]
+
+
 
 plt.figure(figsize=(max(8, len(pivot.columns)*0.6), max(8, len(pivot.index)*0.35)))
 plt.imshow(pivot.values, aspect="auto")
-plt.xticks(range(len(pivot.columns)), pivot.columns, rotation=45, ha="right")
+plt.xticks(
+    range(len(pivot.columns)),
+    [pd.to_datetime(c).strftime("%Y-%m-%d") for c in pivot.columns],
+    rotation=45, ha="right"
+)
+
 plt.yticks(range(len(pivot.index)), pivot.index)
 plt.title("Top Keywords by Day (count)")
 plt.colorbar(label="Count")
