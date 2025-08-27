@@ -15,6 +15,7 @@ mpl.rcParams["axes.unicode_minus"] = False  # －（マイナス）も文字化�
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+HONORIFICS = {"さん", "氏", "君", "ちゃん", "殿"}
 
 # 日本語フォントを設定（WindowsならMS Gothic / Meiryoなど）
 rcParams['font.family'] = 'Meiryo'
@@ -47,47 +48,66 @@ def tokenize_with_janome(text):
     terms = []
     for token in t.tokenize(text):
         base = token.base_form if token.base_form != "*" else token.surface
-        base = unicodedata.normalize("NFKC", base)  # 全角→半角など正規化
-        pos = token.part_of_speech.split(",")
-        # 名詞以外、または数字系の名詞は除外
-        if pos[0] != "名詞":
-            continue
-        if "数" in pos:          # 名詞-数 を除外
-            continue
-        if base.isdigit():       # 半角数字のみ
-            continue
-        if re.fullmatch(r"[0-9]+", base):
-            continue
-        if len(base) < 2:
-            continue
-        terms.append(base)
+        pos = token.part_of_speech.split(",")[0]
+        if pos == "名詞" and len(base) >= 2:
+            # --- 除外ルール ---
+            if base in HONORIFICS:  # さん・氏など
+                continue
+            if re.fullmatch(r"\d+", base):  # 数字だけ
+                continue
+            terms.append(base)
     return terms
 
 
 def tokenize_simple(text):
-    # 正規化（全角→半角、結合文字の統一）
-    text = unicodedata.normalize("NFKC", str(text))
-    # URL除去
-    text = re.sub(r"https?://\S+", " ", text)
-    # 2文字以上の日本語/英数を拾う
+    text = re.sub(r"https?://\S+", " ", str(text))
     pattern = re.compile(r"[ぁ-んァ-ン一-龥A-Za-z0-9]{2,}")
     stop = set("""
-        これ それ あれ ため など そして また
-        する なる できる 行う いる ある もの こと よう
-        さん 月 日 年 今日 明日 昨日
-        ニュース NEWS 速報 写真 画像 動画 PR Yahoo https www com jp article
+        ...
     """.split())
     terms = []
     for w in pattern.findall(text):
-        # 完全に英数字だけの短い語（ノイズ）や数字だけは除外
-        if w.isdigit():
+        if re.fullmatch(r"[A-Za-z0-9]+", w):
             continue
-        if re.fullmatch(r"[0-9]+", w):
+        if re.fullmatch(r"\d{1,4}", w):
             continue
         if w in stop:
             continue
         terms.append(w)
     return terms
+
+
+
+
+
+
+def tokenize_simple(text):
+    text = re.sub(r"https?://\S+", " ", str(text))
+    pattern = re.compile(r"[ぁ-んァ-ン一-龥A-Za-z0-9]{2,}")
+
+    stop = set("""
+        これ それ あれ ため など そして また
+        する なる できる 行う いる ある もの こと よう
+        さん 氏 君 ちゃん 様 ら 等 など
+        月 日 年 今日 明日 昨日
+        ニュース 速報 写真 画像 動画 PR Yahoo https www com jp article
+    """.split())
+
+    terms = []
+    for w in pattern.findall(text):
+        # 半角英数字だけの語を除外
+        if re.fullmatch(r"[A-Za-z0-9]+", w):
+            continue
+        # 純粋な数字（1～4桁）を除外
+        if re.fullmatch(r"\d{1,4}", w):
+            continue
+        # ストップワードを除外
+        if w in stop:
+            continue
+        terms.append(w)
+
+    return terms
+
 
 
 def tokenize(text):

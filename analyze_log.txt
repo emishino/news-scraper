@@ -3,3 +3,28 @@
 ヒートマップを top_keywords_by_day.png に保存しました。
 読み込んだCSV: ['news_20250824.csv', 'news_20250825.csv']
 [2025/08/25 23:23:17.41] analyze end   
+[2025/08/26  6:51:45.57] analyze start 
+日別TOP15を top_keywords_by_day.csv に保存しました。
+ヒートマップを top_keywords_by_day.png に保存しました。
+読み込んだCSV: ['news_20250824.csv', 'news_20250825.csv']
+[2025/08/26  6:51:52.84] analyze end   
+[2025/08/26  6:52:05.77] analyze start 
+日別TOP15を top_keywords_by_day.csv に保存しました。
+ヒートマップを top_keywords_by_day.png に保存しました。
+読み込んだCSV: ['news_20250824.csv', 'news_20250825.csv']
+[2025/08/26  6:52:09.58] analyze end   
+[2025/08/26  6:52:40.43] analyze start 
+日別TOP15を top_keywords_by_day.csv に保存しました。
+ヒートマップを top_keywords_by_day.png に保存しました。
+読み込んだCSV: ['news_20250824.csv', 'news_20250825.csv']
+[2025/08/26  6:52:44.20] analyze end   
+[2025/08/26  6:57:55.28] analyze start 
+日別TOP15を top_keywords_by_day.csv に保存しました。
+ヒートマップを top_keywords_by_day.png に保存しました。
+読み込んだCSV: ['news_20250824.csv', 'news_20250825.csv']
+[2025/08/26  6:57:59.37] analyze end   
+[2025/08/26  6:59:19.65] analyze start 
+日別TOP15を top_keywords_by_day.csv に保存しました。
+ヒートマップを top_keywords_by_day.png に保存しました。
+読み込んだCSV: ['news_20250824.csv', 'news_20250825.csv']
+[2025/08/26  6:59:23.37] analyze end   

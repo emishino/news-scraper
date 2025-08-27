@@ -1,0 +1,5 @@
+[2025/08/26  7:05:32.41] analyze start 
+日別TOP15を top_keywords_by_day.csv に保存しました。
+ヒートマップを top_keywords_by_day.png に保存しました。
+読み込んだCSV: ['news_20250824.csv', 'news_20250825.csv']
+[2025/08/26  7:05:36.06] analyze end   
